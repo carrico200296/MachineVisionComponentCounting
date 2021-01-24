@@ -1,0 +1,44 @@
+How to train a YOLO model with Darknet:
+
+- install cuda
+- install darknet
+- in data folder of darknet repo create a new folder to store the dataset, called "obj"
+- modify the annotation according with the number of classes (modify_dataset.py)
+- store all the images and their annotations .txt document in this /darknet/data/obj folder
+- modify the yolov3 configuration file /darknet/cfg/yolov3.cfg, save it as "yolov3-custom.cfg"
+
+	batch=64
+	subdivisions=64
+	max_batches=4000 (classes*2000 but not less than 4000)
+	steps=3200,3600 (80% and 90% of the max_batches value)
+
+	#seach for "yolo" and change the classes=1 or the number of classes and change the convolutional layer above it (as many times as "yolo" found)
+	[convolutional]
+	filters=18 (=(classes+5)*3)
+	[yolo]
+	classes=1
+
+	change randm=0 to avoud out of memory (if it is needed)
+	
+- inside /data create a file called "obj.names" : insert the name of the classes
+- inside /data create a file called "obj.data" and write:
+
+	classes = 2
+	train = data/train.txt
+	valid = data/test.txt (or train.txt)
+	names = data/obj.names
+	backup = backup/
+
+- create a new folder called "backup" on darknet/
+- use the file "modify_dataset.py" to generate the train.txt
+- run: $ python modify_dataset.py
+- download the file "darknet53.conv74" from darknet website (pretrained model)
+- copy and paste the file on /darknet/
+- $ cd darknet
+- $ ./darknet detector train data/obj.data cfg/yolov3-custom.cfg darknet53.conv.74 -map
+- to use multiple gpus run: $ ./darknet detector train data/obj.data cfg/yolov3-custom.cfg darknet53.conv.74 -gpus 0,1,2,3
+
+- once the training part is done:
+- modify the yolov3-custom.cfg file to test images, save it as yolov3-custom-testing.cfg
+- cd darknet
+- $ ./darknet detector test data/obj.data cfg/yolov3-custom-testing.cfg backup/yolov3_custom_last.weights image_to_test.jpg
